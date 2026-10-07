@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}Dashboard{% endblock %}
+{% block body %}
+<h1>Assalamu alaikum, {{ g.user.full_name.split(' ')[0] }}</h1>
+<div class="stats">
+  <div class="stat"><b>{{ n_students }}</b><span>Active students</span></div>
+  {% if is_admin() %}<div class="stat"><b>{{ n_trial }}</b><span>On free trial</span></div>
+  <div class="stat {{ 'warn' if overdue }}"><b>{{ overdue }}</b><span>Overdue fees</span></div>{% endif %}
+  <div class="stat"><b>{{ todays|length }}</b><span>Classes today</span></div>
+</div>
+{% if missing %}
+<div class="card alert"><h2>⚠ Attendance not yet marked ({{ missing|length }})</h2>
+<table><tr><th>Date</th><th>Class</th><th>Teacher</th><th></th></tr>
+{% for d, c in missing %}<tr><td>{{ d }}</td><td>{{ c.name }} <small class="muted">{{ c.start_time }}</small></td><td>{{ c.teacher_name }}</td>
+<td><a class="btn small" href="{{ url_for('attendance.mark', class_id=c.id, day=d.isoformat()) }}">Mark now</a></td></tr>{% endfor %}</table></div>
+{% endif %}
+<div class="grid2">
+<div class="card"><h2>Today's classes</h2>
+{% for c in todays %}<div class="row"><div><b>{{ c.name }}</b><br><small class="muted">{{ c.start_time }} · {{ c.duration_min }} min · {{ c.course_name }}{% if is_admin() %} · {{ c.teacher_name }}{% endif %}</small></div>
+<div>{% if c.id in today_sessions %}{{ badge(today_sessions[c.id].status) }}{% else %}<a class="btn small" href="{{ url_for('attendance.mark', class_id=c.id, day=today.isoformat()) }}">Mark</a>{% endif %}
+{% if c.meeting_link %}<a class="btn small ghost" href="{{ c.meeting_link }}" target="_blank" rel="noopener noreferrer">Join</a>{% endif %}</div></div>
+{% else %}<p class="muted">No classes scheduled today.</p>{% endfor %}</div>
+<div class="card"><h2>Needs attention <small class="muted">(3+ absences in 30 days)</small></h2>
+{% for s in at_risk %}<div class="row"><a href="{{ url_for('students.detail', student_id=s.id) }}">{{ s.full_name }}</a><span class="badge b-absent">{{ s.absences }} absences</span></div>
+{% else %}<p class="muted">Nobody at risk. Alhamdulillah!</p>{% endfor %}</div>
+</div>
+{% endblock %}

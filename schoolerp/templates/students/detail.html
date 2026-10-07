@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% from "_macros.html" import badge, select %}{% block title %}{{ s.full_name }}{% endblock %}
+{% block body %}
+<div class="head"><h1>{{ s.full_name }} <small class="muted">{{ s.student_code }}</small> {{ badge(s.status) }}</h1>
+{% if is_admin() %}<a class="btn" href="{{ url_for('students.edit', student_id=s.id) }}">Edit</a>{% endif %}</div>
+<div class="grid2">
+<div class="card"><h2>Profile</h2><dl>
+<dt>Gender</dt><dd>{{ s.gender|title }}</dd><dt>Date of birth</dt><dd>{{ s.date_of_birth or '—' }}</dd>
+<dt>Country / time zone</dt><dd>{{ s.country or '—' }} {{ s.timezone }}</dd><dt>Language</dt><dd>{{ s.language }}</dd>
+<dt>Guardian</dt><dd>{{ s.guardian_name or '—' }}</dd>
+{% if is_admin() %}<dt>Guardian contact</dt><dd>{{ s.guardian_phone }} {{ s.guardian_email }}</dd>
+<dt>Monthly fee</dt><dd>{{ s.monthly_fee_cents|money }} {{ s.currency }}</dd><dt>Notes</dt><dd>{{ s.notes or '—' }}</dd>{% endif %}
+</dl></div>
+<div class="card"><h2>Attendance (last 60 days)</h2>
+<div class="stats small"><div class="stat"><b>{{ att.get('present',0) }}</b><span>Present</span></div><div class="stat"><b>{{ att.get('late',0) }}</b><span>Late</span></div>
+<div class="stat"><b>{{ att.get('absent',0) }}</b><span>Absent</span></div><div class="stat"><b>{{ att.get('excused',0) }}</b><span>Excused</span></div></div>
+<table>{% for r in recent %}<tr><td>{{ r.session_date }}</td><td>{{ r.class_name }}</td><td>{{ badge(r.status) }}</td><td class="muted">{{ r.remark }}</td></tr>{% else %}<tr><td class="muted">No attendance yet.</td></tr>{% endfor %}</table></div>
+</div>
+<div class="card"><h2>Classes</h2><table><tr><th>Class</th><th>Course</th><th>Teacher</th><th>Schedule</th><th></th></tr>
+{% for e in enrolls %}<tr><td><a href="{{ url_for('academics.class_detail', class_id=e.id) }}">{{ e.name }}</a></td><td>{{ e.course }}</td><td>{{ e.teacher }}</td><td>{{ e.weekdays|weekdays }} {{ e.start_time }}</td><td>{% if e.ended_on %}<span class="muted">ended {{ e.ended_on }}</span>{% endif %}</td></tr>
+{% else %}<tr><td class="muted">Not enrolled in any class.</td></tr>{% endfor %}</table></div>
+<div class="card"><h2>Lesson progress</h2>
+<form method="post" action="{{ url_for('students.add_progress', student_id=s.id) }}" class="inline-form">{{ csrf_input() }}
+<input type="date" name="entry_date" value="{{ today.isoformat() }}" max="{{ today.isoformat() }}" required>
+<select name="log_type">{% for k, v in LOG_TYPES_ITEMS %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+<input name="from_ref" placeholder="From (e.g. Baqarah 1)" maxlength="80"><input name="to_ref" placeholder="To (e.g. Baqarah 5)" maxlength="80">
+<select name="grade">{% for k, v in GRADES.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+<input name="remarks" placeholder="Remarks" maxlength="500"><button class="btn">Add</button></form>
+<table><tr><th>Date</th><th>Type</th><th>From → To</th><th>Grade</th><th>Remarks</th><th>By</th></tr>
+{% for p in prog %}<tr><td>{{ p.entry_date }}</td><td>{{ LOG_TYPES[p.log_type] }}</td><td>{{ p.from_ref }} → {{ p.to_ref }}</td><td>{{ GRADES[p.grade] }}</td><td>{{ p.remarks }}</td><td class="muted">{{ p.by_name }}</td></tr>
+{% else %}<tr><td colspan="6" class="muted">No lessons logged yet.</td></tr>{% endfor %}</table></div>
+{% if is_admin() %}<div class="card"><h2>Fees</h2><table><tr><th>Month</th><th>Amount</th><th>Due</th><th>Status</th></tr>
+{% for f in fees %}<tr><td>{{ f.period }}</td><td>{{ f.amount_cents|money }} {{ f.currency }}</td><td>{{ f.due_date }}</td><td>{{ badge(f.status) }}</td></tr>{% else %}<tr><td class="muted">No fee records.</td></tr>{% endfor %}</table></div>{% endif %}
+{% endblock %}

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% endblock %} · {{ school_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head><body>
+{% if g.user %}
+<aside class="side">
+  <div class="brand">☪ {{ school_name }}<small>School management</small></div>
+  <nav>
+    {% set ep = request.endpoint or '' %}
+    <a href="{{ url_for('dashboard.index') }}" class="{{ 'on' if ep=='dashboard.index' }}">Dashboard</a>
+    <a href="{{ url_for('attendance.index') }}" class="{{ 'on' if ep.startswith('attendance') }}">Attendance</a>
+    <a href="{{ url_for('students.list_') }}" class="{{ 'on' if ep.startswith('students') }}">Students</a>
+    <a href="{{ url_for('academics.classes') }}" class="{{ 'on' if ep.startswith('academics.class') }}">Classes</a>
+    <a href="{{ url_for('reports.attendance') }}" class="{{ 'on' if ep.startswith('reports') }}">Reports</a>
+    {% if is_admin() %}
+    <div class="navhead">Administration</div>
+    <a href="{{ url_for('academics.courses') }}" class="{{ 'on' if ep=='academics.courses' }}">Courses</a>
+    <a href="{{ url_for('staff.list_') }}" class="{{ 'on' if ep.startswith('staff') }}">Staff &amp; Teachers</a>
+    <a href="{{ url_for('fees.list_') }}" class="{{ 'on' if ep.startswith('fees') }}">Fees</a>
+    <a href="{{ url_for('audit_view.index') }}" class="{{ 'on' if ep.startswith('audit') }}">Activity log</a>
+    {% endif %}
+  </nav>
+  <div class="me">{{ g.user.full_name }}<small>{{ g.user.role|title }}</small>
+    <a href="{{ url_for('auth.change_password') }}">Change password</a>
+    <form method="post" action="{{ url_for('auth.logout') }}">{{ csrf_input() }}<button class="link">Sign out</button></form>
+  </div>
+</aside>
+{% endif %}
+<main class="{{ 'with-side' if g.user }}">
+  {% with msgs = get_flashed_messages(with_categories=true) %}{% for cat, m in msgs %}<div class="flash {{ cat }}">{{ m }}</div>{% endfor %}{% endwith %}
+  {% block body %}{% endblock %}
+</main>
+</body></html>

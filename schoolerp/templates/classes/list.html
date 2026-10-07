@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}Classes{% endblock %}
+{% block body %}<div class="head"><h1>Classes</h1>{% if is_admin() %}<a class="btn primary" href="{{ url_for('academics.class_new') }}">+ New class</a>{% endif %}</div>
+<div class="card"><table><tr><th>Class</th><th>Course</th><th>Teacher</th><th>Schedule</th><th>Students</th><th></th></tr>
+{% for c in classes %}<tr class="{{ 'dim' if not c.is_active }}"><td><a href="{{ url_for('academics.class_detail', class_id=c.id) }}">{{ c.name }}</a></td><td>{{ c.course_name }}</td><td>{{ c.teacher_name }}</td>
+<td>{{ c.weekdays|weekdays }} · {{ c.start_time }} ({{ c.duration_min }}m)</td><td>{{ c.n_students }}</td><td>{% if not c.is_active %}<span class="badge b-left">Inactive</span>{% endif %}</td></tr>
+{% else %}<tr><td class="muted">No classes yet.</td></tr>{% endfor %}</table></div>{% endblock %}

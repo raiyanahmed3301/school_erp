@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}Mark attendance{% endblock %}
+{% block body %}<div class="head"><h1>{{ c.name }}</h1><a class="btn ghost" href="{{ url_for('attendance.index', date=d.isoformat()) }}">← Back</a></div>
+<p class="muted">{{ d.strftime('%A, %d %B %Y') }} · {{ c.start_time }} · {{ c.course_name }} · {{ c.teacher_name }}</p>
+{% if not editable %}<div class="flash error">This date is locked for teachers. Please ask an administrator to change it.</div>{% endif %}
+<form method="post" class="card" id="att-form">{{ csrf_input() }}
+<fieldset {{ 'disabled' if not editable }}>
+<div class="cols"><label class="field"><span>What happened to this class?</span>
+<select name="session_status" id="session_status">{% for k, v in SESSION_STATUSES.items() %}<option value="{{ k }}" {{ 'selected' if (sess and sess.status==k) or (not sess and k=='held') }}>{{ v }}</option>{% endfor %}</select></label>
+<label class="field"><span>Note (optional)</span><input name="note" maxlength="300" value="{{ sess.note if sess else '' }}"></label></div>
+<div id="students-box">
+<div class="head"><h2>Students</h2><button type="button" class="btn small" id="all-present">Mark all present</button></div>
+<table class="att"><tr><th>Student</th><th>Status</th><th>Remark</th></tr>
+{% for s in students %}<tr><td>{{ s.full_name }}<br><small class="muted">{{ s.student_code }}</small></td>
+<td class="radios">{% for k, v in ATT_STATUSES.items() %}<label class="r-{{ k }}"><input type="radio" name="status_{{ s.id }}" value="{{ k }}" {{ 'checked' if (s.att_status==k) or (not s.att_status and not sess and k=='present') }} required> {{ v }}</label>{% endfor %}</td>
+<td><input name="remark_{{ s.id }}" maxlength="200" value="{{ s.remark or '' }}" placeholder="optional"></td></tr>
+{% else %}<tr><td colspan="3" class="muted">No students enrolled in this class on this date.</td></tr>{% endfor %}</table></div>
+{% if editable %}<button class="btn primary">Save attendance</button>{% endif %}
+</fieldset></form>{% endblock %}

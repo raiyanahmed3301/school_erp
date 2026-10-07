@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}Activity log{% endblock %}
+{% block body %}<h1>Activity log</h1><div class="card"><table><tr><th>Time (UTC)</th><th>User</th><th>Action</th><th>Details</th><th>IP</th></tr>
+{% for r in rows %}<tr><td>{{ r.ts }}</td><td>{{ r.username }}</td><td>{{ r.action }}</td><td>{{ r.entity }} {{ r.entity_id or '' }} {{ r.details }}</td><td>{{ r.ip }}</td></tr>{% endfor %}</table>
+<p>{% if page>1 %}<a href="?page={{ page-1 }}">← Newer</a>{% endif %} {% if rows|length==100 %}<a href="?page={{ page+1 }}">Older →</a>{% endif %}</p></div>{% endblock %}

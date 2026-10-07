@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}Students{% endblock %}
+{% block body %}
+<div class="head"><h1>Students</h1>{% if is_admin() %}<a class="btn primary" href="{{ url_for('students.new') }}">+ Add student</a>{% endif %}</div>
+<form class="filters" method="get"><input name="q" value="{{ q }}" placeholder="Search name or ID" maxlength="60">
+<select name="status"><option value="">All statuses</option>{% for s in STATUSES %}<option value="{{ s }}" {{ 'selected' if s==status }}>{{ s|title }}</option>{% endfor %}</select>
+<button class="btn">Filter</button></form>
+<div class="card"><table><tr><th>ID</th><th>Name</th><th>Country</th><th>Language</th><th>Status</th></tr>
+{% for s in students %}<tr><td>{{ s.student_code }}</td><td><a href="{{ url_for('students.detail', student_id=s.id) }}">{{ s.full_name }}</a></td><td>{{ s.country }}</td><td>{{ s.language }}</td><td>{{ badge(s.status) }}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">No students found.</td></tr>{% endfor %}</table></div>
+{% endblock %}

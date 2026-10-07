@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}{{ c.name }}{% endblock %}
+{% block body %}<div class="head"><h1>{{ c.name }}</h1><div>
+{% if is_admin() %}<a class="btn" href="{{ url_for('academics.class_edit', class_id=c.id) }}">Edit</a>{% endif %}
+<a class="btn primary" href="{{ url_for('attendance.mark', class_id=c.id, day=today.isoformat()) }}">Mark today's attendance</a></div></div>
+<div class="card"><dl><dt>Course</dt><dd>{{ c.course_name }}</dd><dt>Teacher</dt><dd>{{ c.teacher_name }}</dd>
+<dt>Schedule</dt><dd>{{ c.weekdays|weekdays }} at {{ c.start_time }} ({{ c.duration_min }} min)</dd>
+<dt>Meeting link</dt><dd>{% if c.meeting_link %}<a href="{{ c.meeting_link }}" target="_blank" rel="noopener noreferrer">{{ c.meeting_link }}</a>{% else %}—{% endif %}</dd></dl></div>
+<div class="card"><h2>Students ({{ students|length }})</h2><table>
+{% for s in students %}<tr><td>{{ s.student_code }}</td><td><a href="{{ url_for('students.detail', student_id=s.id) }}">{{ s.full_name }}</a></td><td class="muted">since {{ s.enrolled_on }}</td>
+<td>{% if is_admin() %}<form method="post" action="{{ url_for('academics.unenroll', class_id=c.id) }}" class="inline" data-confirm="Remove {{ s.full_name }} from this class?">{{ csrf_input() }}<input type="hidden" name="student_id" value="{{ s.id }}"><button class="btn small ghost">Remove</button></form>{% endif %}</td></tr>
+{% else %}<tr><td class="muted">No students yet.</td></tr>{% endfor %}</table>
+{% if is_admin() %}<form method="post" action="{{ url_for('academics.enroll', class_id=c.id) }}" class="inline-form">{{ csrf_input() }}
+<select name="student_id" required><option value="">Add a student…</option>{% for s in available %}<option value="{{ s.id }}">{{ s.full_name }} ({{ s.student_code }})</option>{% endfor %}</select><button class="btn">Add to class</button></form>{% endif %}</div>{% endblock %}

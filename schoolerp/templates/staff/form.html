@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% from "_macros.html" import field, select %}{% block title %}Account{% endblock %}
+{% block body %}<h1>{{ 'Add account' if mode=='new' else 'Edit ' ~ u.username }}</h1>
+<form method="post" class="card form narrow">{{ csrf_input() }}
+{% if mode=='new' %}{{ field('Username','username',u.username,required=True,maxlength=32,hint='lowercase letters, numbers, . _ -') }}{% endif %}
+{{ field('Full name','full_name',u.full_name,required=True,maxlength=100) }}
+{{ field('Email','email',u.email,'email',maxlength=150) }}
+{{ select('Role','role',[('teacher','Teacher'),('admin','Administrator')],u.role) }}
+{{ select('Gender','gender',[('','—'),('male','Male'),('female','Female')],u.gender) }}
+{% if mode=='edit' %}{{ select('Account','is_active',[('1','Active'),('0','Deactivated (cannot sign in)')],u.is_active) }}{% else %}<p class="muted">A temporary password will be generated and shown once. The user must change it at first sign in.</p>{% endif %}
+<button class="btn primary">Save</button> <a class="btn ghost" href="{{ url_for('staff.list_') }}">Cancel</a></form>{% endblock %}

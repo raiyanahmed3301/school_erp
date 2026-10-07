@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}Attendance{% endblock %}
+{% block body %}<h1>Attendance</h1>
+<div class="datenav"><a class="btn" href="?date={{ prev_day }}">← Previous day</a><b>{{ d.strftime('%A, %d %B %Y') }}</b>
+{% if next_day %}<a class="btn" href="?date={{ next_day }}">Next day →</a>{% else %}<span class="btn ghost off">Today</span>{% endif %}
+<form method="get" class="inline"><input type="date" name="date" value="{{ d }}" max="{{ today }}"><button class="btn small">Go</button></form></div>
+<div class="card"><h2>Scheduled on this day</h2><table>
+{% for c in scheduled %}<tr><td><b>{{ c.name }}</b><br><small class="muted">{{ c.start_time }} · {{ c.course_name }}{% if is_admin() %} · {{ c.teacher_name }}{% endif %}</small></td>
+<td>{% if c.id in sess %}{{ badge(sess[c.id].status) }}{% else %}<span class="badge b-pending">Not marked</span>{% endif %}</td>
+<td><a class="btn small primary" href="{{ url_for('attendance.mark', class_id=c.id, day=d.isoformat()) }}">{{ 'Review / edit' if c.id in sess else 'Mark attendance' }}</a></td></tr>
+{% else %}<tr><td class="muted">No classes scheduled.</td></tr>{% endfor %}</table></div>
+{% if others %}<div class="card"><h2>Extra / make-up class</h2><p class="muted">Not on the usual schedule for this day.</p><table>
+{% for c in others %}<tr><td>{{ c.name }} <small class="muted">{{ c.course_name }}</small></td><td>{% if c.id in sess %}{{ badge(sess[c.id].status) }}{% endif %}</td>
+<td><a class="btn small" href="{{ url_for('attendance.mark', class_id=c.id, day=d.isoformat()) }}">Open</a></td></tr>{% endfor %}</table></div>{% endif %}{% endblock %}

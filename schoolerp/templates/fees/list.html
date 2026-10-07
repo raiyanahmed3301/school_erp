@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}Fees{% endblock %}
+{% block body %}<div class="head"><h1>Fees</h1><div><a class="btn" href="?status={{ status }}&month={{ month }}&format=csv">CSV</a> <a class="btn primary" href="{{ url_for('fees.new') }}">+ Add fee</a></div></div>
+<form class="filters" method="get"><input name="q" value="{{ q }}" placeholder="Student name" maxlength="60"><input type="month" name="month" value="{{ month }}">
+<select name="status"><option value="">All</option>{% for s in ['pending','overdue','paid','waived'] %}<option value="{{ s }}" {{ 'selected' if s==status }}>{{ s|title }}</option>{% endfor %}</select><button class="btn">Filter</button></form>
+<div class="card"><h2>Generate monthly fees</h2><form method="post" action="{{ url_for('fees.generate') }}" class="inline-form">{{ csrf_input() }}
+<input type="month" name="period" value="{{ today[:7] }}" required><input type="date" name="due_date" value="{{ today }}" required><button class="btn">Create for all active students</button></form>
+<small class="muted">Uses each student's monthly fee. Existing records are never duplicated.</small></div>
+<div class="card"><table><tr><th>Student</th><th>Month</th><th>Amount</th><th>Due</th><th>Status</th><th>Action</th></tr>
+{% for f in fees %}<tr><td><a href="{{ url_for('students.detail', student_id=f.student_id) }}">{{ f.full_name }}</a></td><td>{{ f.period }}</td><td>{{ f.amount_cents|money }} {{ f.currency }}</td><td>{{ f.due_date }}</td>
+<td>{% if f.status=='pending' and f.due_date < today %}<span class="badge b-absent">Overdue</span>{% else %}{{ badge(f.status) }}{% endif %}{% if f.paid_on %}<br><small class="muted">{{ f.paid_on }} · {{ f.method }}</small>{% endif %}</td>
+<td>{% if f.status=='pending' %}<form method="post" action="{{ url_for('fees.pay', fee_id=f.id) }}" class="inline-form">{{ csrf_input() }}<input type="hidden" name="action" value="paid">
+<select name="method">{% for m in ['PayPal','UPI','Bank transfer','Card','Cash','Other'] %}<option>{{ m }}</option>{% endfor %}</select><input name="reference" placeholder="Reference" maxlength="80"><button class="btn small primary">Paid</button></form>
+<form method="post" action="{{ url_for('fees.pay', fee_id=f.id) }}" class="inline" data-confirm="Waive this fee?">{{ csrf_input() }}<input type="hidden" name="action" value="waived"><button class="btn small ghost">Waive</button></form>
+{% else %}<form method="post" action="{{ url_for('fees.pay', fee_id=f.id) }}" class="inline" data-confirm="Re-open this fee as pending?">{{ csrf_input() }}<input type="hidden" name="action" value="reopen"><button class="btn small ghost">Re-open</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="6" class="muted">No fee records.</td></tr>{% endfor %}</table></div>{% endblock %}

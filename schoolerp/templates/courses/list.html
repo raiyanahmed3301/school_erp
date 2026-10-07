@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block title %}Courses{% endblock %}
+{% block body %}<h1>Courses</h1>
+<div class="card"><table><tr><th>Course</th><th>Description</th><th>Status</th><th>Active classes</th><th></th></tr>
+{% for c in courses %}<tr><form method="post" action="{{ url_for('academics.course_save') }}">{{ csrf_input() }}<input type="hidden" name="id" value="{{ c.id }}">
+<td><input name="name" value="{{ c.name }}" maxlength="80" required></td><td><input name="description" value="{{ c.description }}" maxlength="200"></td>
+<td><select name="is_active"><option value="1" {{ 'selected' if c.is_active }}>Active</option><option value="0" {{ 'selected' if not c.is_active }}>Hidden</option></select></td>
+<td>{{ c.n_classes }}</td><td><button class="btn small">Save</button></td></form></tr>{% endfor %}
+<tr><form method="post" action="{{ url_for('academics.course_save') }}">{{ csrf_input() }}<td><input name="name" placeholder="New course name" maxlength="80" required></td><td><input name="description" placeholder="Description" maxlength="200"></td><td></td><td></td><td><button class="btn small primary">Add</button></td></form></tr>
+</table></div>{% endblock %}

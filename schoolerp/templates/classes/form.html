@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% from "_macros.html" import field, select %}{% block title %}Class{% endblock %}
+{% block body %}<h1>{{ 'New class' if mode=='new' else 'Edit class' }}</h1>
+<form method="post" class="card form">{{ csrf_input() }}<div class="cols">
+{{ field('Class name','name',c.name,required=True,maxlength=100,hint='e.g. Hifz – Aisha (1-on-1) or Tajweed Group A') }}
+{{ select('Course','course_id',[('','Choose…')]+(courses|rowopts('id','name')),c.course_id,True) }}
+{{ select('Teacher','teacher_id',[('','Choose…')]+(teachers|rowopts('id','full_name')),c.teacher_id,True) }}
+{{ field('Start time (school time)','start_time',c.start_time,'time',True) }}
+{{ field('Duration (minutes)','duration_min',c.duration_min,'number',True) }}
+{{ field('Zoom / Meet link','meeting_link',c.meeting_link,'url',maxlength=300,hint='must start with https://') }}
+{{ field('Starts on','start_date',c.start_date,'date') }}{{ field('Ends on','end_date',c.end_date,'date') }}
+</div>
+<fieldset class="days"><legend>Days of the week *</legend>{% for n in WEEKDAYS %}<label><input type="checkbox" name="weekdays" value="{{ loop.index0 }}" {{ 'checked' if loop.index0 in c.weekday_set }}> {{ n }}</label>{% endfor %}</fieldset>
+{{ select('Status','is_active',[('1','Active'),('0','Inactive')],c.is_active) }}
+<button class="btn primary">Save</button> <a class="btn ghost" href="{{ url_for('academics.classes') }}">Cancel</a></form>{% endblock %}

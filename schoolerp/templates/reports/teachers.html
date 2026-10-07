@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block title %}Teacher report{% endblock %}
+{% block body %}<div class="head"><h1>Teacher report</h1><a class="btn" href="?month={{ month }}&format=csv">Download CSV</a></div>
+<form class="filters" method="get"><input type="month" name="month" value="{{ month }}"><button class="btn">Show</button></form>
+<div class="card"><table><tr><th>Teacher</th><th>Classes held</th><th>Hours taught</th><th>Cancelled by teacher</th><th>Student cancelled</th><th>Holidays</th></tr>
+{% for r in rows %}<tr><td>{{ r.full_name }}</td><td>{{ r.held or 0 }}</td><td>{{ '%.1f'|format((r.minutes or 0)/60) }}</td><td>{{ r.cancelled_teacher or 0 }}</td><td>{{ r.cancelled_student or 0 }}</td><td>{{ r.holiday or 0 }}</td></tr>{% endfor %}</table>
+<p class="muted"><small>Useful for monthly teacher payments. Based on attendance sheets teachers submitted.</small></p></div>{% endblock %}

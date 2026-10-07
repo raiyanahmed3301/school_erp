@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% from "_macros.html" import field, select %}{% block title %}{{ 'New' if mode=='new' else 'Edit' }} student{% endblock %}
+{% block body %}
+<h1>{{ 'Add student' if mode=='new' else 'Edit ' ~ s.full_name }}</h1>
+<form method="post" class="card form">{{ csrf_input() }}
+<h2>Student</h2><div class="cols">
+{{ field('Full name','full_name',s.full_name,required=True,maxlength=100) }}
+{{ select('Gender','gender',[('','Choose…'),('male','Male'),('female','Female')],s.gender,True) }}
+{{ field('Date of birth','date_of_birth',s.date_of_birth,'date') }}
+{{ select('Preferred language','language',LANGS|pairs,s.language) }}
+{{ field('Country','country',s.country,maxlength=60) }}
+{{ field('Time zone','timezone',s.timezone,maxlength=60,hint='e.g. Europe/London, America/Chicago') }}
+</div>
+<h2>Parent / guardian</h2><div class="cols">
+{{ field('Guardian name','guardian_name',s.guardian_name,maxlength=100) }}
+{{ field('Guardian WhatsApp / phone','guardian_phone',s.guardian_phone,'tel',maxlength=30) }}
+{{ field('Guardian email','guardian_email',s.guardian_email,'email',maxlength=150) }}
+</div>
+<h2>Enrolment &amp; fee</h2><div class="cols">
+{{ select('Status','status',STATUSES|titled,s.status) }}
+{{ field('Joined on','joined_on',s.joined_on,'date') }}
+{{ field('Monthly fee','monthly_fee',s.monthly_fee,'number') }}
+{{ select('Currency','currency',CURRENCIES|pairs,s.currency) }}
+</div>
+<label class="field"><span>Notes (internal)</span><textarea name="notes" rows="3" maxlength="1000">{{ s.notes or '' }}</textarea></label>
+<button class="btn primary">Save</button> <a class="btn ghost" href="{{ url_for('students.list_') }}">Cancel</a>
+</form>{% endblock %}

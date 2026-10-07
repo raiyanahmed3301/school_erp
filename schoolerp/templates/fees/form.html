@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% from "_macros.html" import field, select %}{% block title %}Add fee{% endblock %}
+{% block body %}<h1>Add fee record</h1><form method="post" class="card form narrow">{{ csrf_input() }}
+{{ select('Student','student_id',[('','Choose…')]+student_opts,f.get('student_id',''),True) }}
+{{ field('Month','period',f.get('period'),'month',True) }}{{ field('Amount','amount',f.get('amount',''),'number',True) }}
+{{ select('Currency','currency',CURRENCIES|pairs,f.get('currency')) }}{{ field('Due date','due_date',f.get('due_date'),'date',True) }}
+{{ field('Notes','notes',f.get('notes',''),maxlength=200) }}
+<button class="btn primary">Save</button> <a class="btn ghost" href="{{ url_for('fees.list_') }}">Cancel</a></form>{% endblock %}

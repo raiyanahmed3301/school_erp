@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}Staff{% endblock %}
+{% block body %}<div class="head"><h1>Staff &amp; Teachers</h1><a class="btn primary" href="{{ url_for('staff.new') }}">+ Add account</a></div>
+<div class="card"><table><tr><th>Name</th><th>Username</th><th>Role</th><th>Gender</th><th>Last login</th><th></th></tr>
+{% for u in users %}<tr class="{{ 'dim' if not u.is_active }}"><td>{{ u.full_name }}</td><td>{{ u.username }}</td><td>{{ u.role|title }}</td><td>{{ u.gender|title }}</td><td>{{ u.last_login or 'never' }}</td>
+<td><a class="btn small" href="{{ url_for('staff.edit', user_id=u.id) }}">Edit</a>
+<form method="post" action="{{ url_for('staff.reset', user_id=u.id) }}" class="inline" data-confirm="Generate a new temporary password for {{ u.full_name }}?">{{ csrf_input() }}<button class="btn small ghost">Reset password</button></form></td></tr>{% endfor %}</table></div>{% endblock %}
