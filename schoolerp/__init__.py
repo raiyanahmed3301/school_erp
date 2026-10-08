@@ -8,15 +8,20 @@ from markupsafe import Markup
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from . import db, security, utils
-from .config import INSTANCE_DIR, load_secret_key
+from .config import INSTANCE_DIR, IS_VERCEL, load_secret_key
 
 
 def create_app(test_config=None):
+    database_url = os.environ.get("DATABASE_URL")
+    if IS_VERCEL and not database_url:
+        raise RuntimeError("Set DATABASE_URL to a persistent PostgreSQL database in Vercel Project Settings.")
+    if IS_VERCEL and not database_url.startswith(("postgres://", "postgresql://")):
+        raise RuntimeError("DATABASE_URL must be a PostgreSQL connection string on Vercel.")
     app = Flask(__name__, instance_path=str(INSTANCE_DIR))
     dev = os.environ.get("SCHOOL_ERP_ENV") == "development"
     app.config.update(
         SECRET_KEY=load_secret_key(),
-        DATABASE=str(INSTANCE_DIR / "school.db"),
+        DATABASE=database_url or str(INSTANCE_DIR / "school.db"),
         SCHOOL_NAME="Quran Live Class",
         SCHOOL_TZ=os.environ.get("SCHOOL_TZ", "Asia/Kolkata"),
         STUDENT_PREFIX="QLC",
@@ -31,7 +36,7 @@ def create_app(test_config=None):
     )
     if test_config:
         app.config.update(test_config)
-    INSTANCE_DIR.mkdir(mode=0o700, exist_ok=True)
+    INSTANCE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
     if os.environ.get("BEHIND_PROXY") == "1":  # one trusted reverse proxy (nginx/caddy)
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 

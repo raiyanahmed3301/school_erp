@@ -38,6 +38,16 @@ Set your school's time zone with `SCHOOL_TZ` (default `Asia/Kolkata`). Class tim
 5. Back up `instance/school.db` daily (copy it off the server). Keep `instance/` readable only by the app user.
 6. Use a separate sub-domain (e.g. `erp.`), not your public WordPress site.
 
+## Deploying to Vercel
+The Vercel entrypoint is `app.py`. Vercel Functions have a read-only application filesystem, so this deployment uses `/tmp` only for temporary instance files and requires a persistent PostgreSQL database (for example, a Neon database connected through Vercel Marketplace).
+
+1. Set the Vercel project's **Root Directory** to this repository directory (the directory containing `app.py` and `requirements.txt`).
+2. Add a PostgreSQL database and set `DATABASE_URL` to its pooled connection string in the Vercel project's Environment Variables.
+3. Set `SECRET_KEY` to a long random value in the same settings. Do not use the generated local development key.
+4. Redeploy. The app creates its PostgreSQL schema and starter course rows on the first database request.
+
+SQLite remains the default for local installs. It is not used on Vercel because function-local files are temporary and cannot safely hold school records.
+
 ## Security design (what protects you)
 - **Passwords**: scrypt hashing with salts; min 10 chars + policy; no default accounts; temp passwords shown once and must be changed.
 - **Login protection**: generic error messages, constant-time check for unknown users, lockout (5 failures/15 min per user, 25 per IP).

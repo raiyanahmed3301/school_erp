@@ -90,7 +90,7 @@ def new():
                 (d["full_name"], d["gender"], d["date_of_birth"] or None, d["guardian_name"], d["guardian_phone"],
                  d["guardian_email"], d["country"], d["timezone"], d["language"], d["status"],
                  d["joined_on"] or school_today().isoformat(), d["monthly_fee_cents"], d["currency"], d["notes"]))
-            sid = cur.lastrowid
+            sid = cur.fetchone()["id"] if current_app.config["DATABASE"].startswith(("postgres://", "postgresql://")) else cur.lastrowid
             db.execute("UPDATE students SET student_code=? WHERE id=?", (f"{current_app.config['STUDENT_PREFIX']}-{sid:04d}", sid))
         audit("student_created", "student", sid, d["full_name"])
         flash("Student added.", "success")
