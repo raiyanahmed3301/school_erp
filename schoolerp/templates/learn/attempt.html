@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block title %}Quiz result{% endblock %}
+{% block body %}<h1>{{ at.title }} — result</h1>
+<div class="card center"><h2>{{ at.score }} / {{ at.total }} ({{ pct }}%)</h2>{% if at.passed %}<p><span class="badge b-present">Passed — mashaAllah!</span></p>{% else %}<p><span class="badge b-absent">Not passed yet</span> <small class="muted">(pass mark {{ at.pass_percent }}%)</small></p>{% endif %}
+{% if not at.passed and can_retry %}<a class="btn primary" href="{{ url_for('learn.quiz', quiz_id=at.quiz_id) }}">Try again</a>{% endif %} <a class="btn" href="{{ url_for('learn.course', course_id=c.id) }}">Back to course</a></div>
+<div class="card"><h2>Review</h2>{% for r in rows %}<div class="q"><h3>{{ loop.index }}. {{ r.text }}</h3>
+<div class="opt {{ 'right' if r.ok else 'wrong' }}">Your answer: {{ r.chosen or '(no answer)' }} {{ '✓' if r.ok else '✗' }}</div>{% if not r.ok %}<div class="opt right">Correct answer: {{ r.right }}</div>{% endif %}</div>{% endfor %}</div>{% endblock %}

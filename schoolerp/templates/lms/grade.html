@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block title %}Grade{% endblock %}
+{% block body %}<h1>{{ s.a_title }} — {{ s.full_name }}</h1>
+<div class="card"><h2>Question</h2><div class="prose">{{ s.instructions|paragraphs }}</div></div>
+<div class="card"><h2>Student's answer <small class="muted">submitted {{ s.submitted_at }}</small></h2><div class="prose">{{ s.body|paragraphs }}</div></div>
+<form method="post" class="card form narrow">{{ csrf_input() }}<h2>Grade</h2>
+<label class="field"><span>Points (0–{{ s.max_points }})</span><input type="number" name="points" min="0" max="{{ s.max_points }}" required value="{{ s.points if s.points is not none else '' }}"></label>
+<label class="field"><span>Feedback for the student</span><textarea name="feedback" rows="5" maxlength="2000">{{ s.feedback or '' }}</textarea></label>
+<button class="btn primary">Save grade</button> <a class="btn ghost" href="{{ url_for('lms.submissions', assignment_id=s.assignment_id) }}">Cancel</a></form>{% endblock %}

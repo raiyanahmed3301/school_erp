@@ -28,6 +28,12 @@
 <table><tr><th>Date</th><th>Type</th><th>From → To</th><th>Grade</th><th>Remarks</th><th>By</th></tr>
 {% for p in prog %}<tr><td>{{ p.entry_date }}</td><td>{{ LOG_TYPES[p.log_type] }}</td><td>{{ p.from_ref }} → {{ p.to_ref }}</td><td>{{ GRADES[p.grade] }}</td><td>{{ p.remarks }}</td><td class="muted">{{ p.by_name }}</td></tr>
 {% else %}<tr><td colspan="6" class="muted">No lessons logged yet.</td></tr>{% endfor %}</table></div>
-{% if is_admin() %}<div class="card"><h2>Fees</h2><table><tr><th>Month</th><th>Amount</th><th>Due</th><th>Status</th></tr>
+{% if is_admin() %}<div class="card"><h2>Student portal login</h2>
+{% if portal %}<p>Username: <code>{{ portal.username }}</code> · {{ 'Active' if portal.is_active else 'Disabled' }} · last login {{ portal.last_login or 'never' }}</p>
+<form method="post" action="{{ url_for('students.portal_login', student_id=s.id) }}" class="inline" data-confirm="Create a new temporary password?">{{ csrf_input() }}<button class="btn small">Reset password</button></form>
+<form method="post" action="{{ url_for('students.portal_toggle', student_id=s.id) }}" class="inline">{{ csrf_input() }}<button class="btn small ghost">{{ 'Disable login' if portal.is_active else 'Enable login' }}</button></form>
+{% else %}<p class="muted">This student can't sign in yet. Create a login so they can use courses, quizzes and see their attendance.</p>
+<form method="post" action="{{ url_for('students.portal_login', student_id=s.id) }}">{{ csrf_input() }}<button class="btn primary">Create portal login</button></form>{% endif %}</div>
+<div class="card"><h2>Fees</h2><table><tr><th>Month</th><th>Amount</th><th>Due</th><th>Status</th></tr>
 {% for f in fees %}<tr><td>{{ f.period }}</td><td>{{ f.amount_cents|money }} {{ f.currency }}</td><td>{{ f.due_date }}</td><td>{{ badge(f.status) }}</td></tr>{% else %}<tr><td class="muted">No fee records.</td></tr>{% endfor %}</table></div>{% endif %}
 {% endblock %}

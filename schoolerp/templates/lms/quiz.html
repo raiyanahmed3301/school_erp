@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}Quiz{% endblock %}
+{% block body %}<div class="head"><h1>{{ z.title }} {{ badge('published' if z.is_published else 'draft') }}</h1><a class="btn ghost" href="{{ url_for('lms.course_manage', course_id=c.id) }}#quizzes">← Back to course</a></div>
+<div class="help">Multiple-choice, graded automatically. Students never see which answer is correct until they submit.</div>
+<form method="post" action="{{ url_for('lms.quiz_settings', quiz_id=z.id) }}" class="card form">{{ csrf_input() }}<h2>Settings</h2><div class="cols">
+<label class="field"><span>Title</span><input name="title" value="{{ z.title }}" maxlength="150" required></label>
+<label class="field"><span>Pass mark (%)</span><input type="number" name="pass_percent" min="1" max="100" value="{{ z.pass_percent }}" required></label>
+<label class="field"><span>Attempts allowed</span><input type="number" name="max_attempts" min="1" max="20" value="{{ z.max_attempts }}" required></label></div>
+<label class="field"><span>Instructions (optional)</span><input name="instructions" value="{{ z.instructions }}" maxlength="2000"></label><button class="btn">Save settings</button></form>
+<div class="card"><h2>Questions ({{ questions|length }})</h2>
+{% for q in questions %}<div class="q"><div class="head"><h3>{{ loop.index }}. {{ q.text }}</h3><form method="post" action="{{ url_for('lms.question_delete', question_id=q.id) }}" class="inline" data-confirm="Delete this question?">{{ csrf_input() }}<button class="btn small ghost">Delete</button></form></div>
+{% for o in by_q.get(q.id, []) %}<div class="opt {{ 'right' if o.is_correct }}">{{ o.text }}{% if o.is_correct %} ✓{% endif %}</div>{% endfor %}</div>{% else %}<p class="muted">No questions yet — add the first one below.</p>{% endfor %}</div>
+<form method="post" action="{{ url_for('lms.question_add', quiz_id=z.id) }}" class="card form">{{ csrf_input() }}<h2>Add a question</h2>
+<label class="field"><span>Question</span><input name="text" maxlength="500" required></label>
+{% for i in range(1,7) %}<div class="inline-form"><label class="opt grow"><input type="radio" name="correct" value="{{ i }}"> correct</label><input name="opt{{ i }}" placeholder="Answer choice {{ i }}{{ ' (optional)' if i>2 }}" maxlength="200"></div>{% endfor %}
+<small class="muted">Fill at least two choices and tick the correct one.</small><br><button class="btn primary">Add question</button></form>
+<div class="card"><form method="post" action="{{ url_for('lms.quiz_publish', quiz_id=z.id) }}" class="inline">{{ csrf_input() }}<input type="hidden" name="publish" value="{{ 0 if z.is_published else 1 }}"><button class="btn {{ 'ghost' if z.is_published else 'primary' }}">{{ 'Hide from students' if z.is_published else 'Publish quiz' }}</button></form>
+<a class="btn" href="{{ url_for('lms.quiz_results', quiz_id=z.id) }}">View results</a>
+<form method="post" action="{{ url_for('lms.quiz_delete', quiz_id=z.id) }}" class="inline" data-confirm="Delete this quiz and all attempts?">{{ csrf_input() }}<button class="btn ghost">Delete quiz</button></form></div>{% endblock %}

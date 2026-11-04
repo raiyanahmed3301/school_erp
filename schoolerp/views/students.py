@@ -2,9 +2,10 @@ from flask import Blueprint, abort, flash, g, redirect, render_template, request
 from datetime import timedelta
 
 from ..db import execute, get_db, query
-from ..security import admin_required, audit, get_student_or_404, is_admin, login_required
+from ..security import admin_required, audit, get_student_or_404, hash_password, is_admin, login_required, temp_password
 from ..utils import clean, parse_date, parse_money, school_today, valid_email
 from flask import current_app
+import sqlite3
 
 bp = Blueprint("students", __name__, url_prefix="/students")
 
@@ -90,7 +91,7 @@ def new():
                 (d["full_name"], d["gender"], d["date_of_birth"] or None, d["guardian_name"], d["guardian_phone"],
                  d["guardian_email"], d["country"], d["timezone"], d["language"], d["status"],
                  d["joined_on"] or school_today().isoformat(), d["monthly_fee_cents"], d["currency"], d["notes"]))
-            sid = cur.fetchone()["id"] if current_app.config["DATABASE"].startswith(("postgres://", "postgresql://")) else cur.lastrowid
+            sid = cur.lastrowid
             db.execute("UPDATE students SET student_code=? WHERE id=?", (f"{current_app.config['STUDENT_PREFIX']}-{sid:04d}", sid))
         audit("student_created", "student", sid, d["full_name"])
         flash("Student added.", "success")
@@ -122,7 +123,8 @@ def detail(student_id):
     prog = query("""SELECT p.*, u.full_name by_name FROM progress p JOIN users u ON u.id=p.recorded_by
                     WHERE p.student_id=? ORDER BY p.entry_date DESC, p.id DESC LIMIT 30""", (student_id,))
     fees = query("SELECT * FROM fees WHERE student_id=? ORDER BY period DESC LIMIT 12", (student_id,)) if is_admin() else []
-    return render_template("students/detail.html", s=s, enrolls=enrolls, att=att, recent=recent, prog=prog,
+    portal = query("SELECT id, username, is_active, last_login FROM users WHERE id=?", (s["user_id"],), one=True) if (is_admin() and s["user_id"]) else None
+    return render_template("students/detail.html", portal=portal, s=s, enrolls=enrolls, att=att, recent=recent, prog=prog,
                            fees=fees, LOG_TYPES=LOG_TYPES, GRADES=GRADES, today=today, LOG_TYPES_ITEMS=LOG_TYPES.items())
 
 
@@ -166,4 +168,46 @@ def add_progress(student_id):
              clean(request.form.get("to_ref"), 80), grade, clean(request.form.get("remarks"), 500), g.user["id"]))
     audit("progress_added", "student", student_id, log_type)
     flash("Lesson log saved.", "success")
+    return redirect(url_for("students.detail", student_id=student_id))
+
+
+@bp.route("/<int:student_id>/portal", methods=["POST"])
+@admin_required
+def portal_login(student_id):
+    """Create the student's portal login, or reset its password. Temp password is shown once."""
+    s = get_student_or_404(student_id)
+    pw = temp_password()
+    if s["user_id"]:
+        u = query("SELECT * FROM users WHERE id=? AND role='student'", (s["user_id"],), one=True) or abort(404)
+        execute("UPDATE users SET password_hash=?, must_change_password=1, token_version=token_version+1, is_active=1 WHERE id=?",
+                (hash_password(pw), u["id"]))
+        audit("portal_password_reset", "student", student_id, u["username"])
+        uname = u["username"]
+    else:
+        uname = s["student_code"].lower()
+        db = get_db()
+        try:
+            with db:
+                cur = db.execute("""INSERT INTO users (username, full_name, role, gender, password_hash, must_change_password)
+                                    VALUES (?,?,'student',?,?,1)""", (uname, s["full_name"], s["gender"], hash_password(pw)))
+                db.execute("UPDATE students SET user_id=? WHERE id=?", (cur.lastrowid, student_id))
+        except sqlite3.IntegrityError:
+            flash("Could not create the login (username already in use).", "error")
+            return redirect(url_for("students.detail", student_id=student_id))
+        audit("portal_created", "student", student_id, uname)
+    return render_template("staff/credentials.html", username=uname, password=pw, full_name=s["full_name"],
+                           back_url=url_for("students.detail", student_id=student_id))
+
+
+@bp.route("/<int:student_id>/portal/toggle", methods=["POST"])
+@admin_required
+def portal_toggle(student_id):
+    s = get_student_or_404(student_id)
+    if not s["user_id"]:
+        abort(404)
+    u = query("SELECT is_active FROM users WHERE id=? AND role='student'", (s["user_id"],), one=True) or abort(404)
+    new = 0 if u["is_active"] else 1
+    execute("UPDATE users SET is_active=?, token_version=token_version+1 WHERE id=?", (new, s["user_id"]))
+    audit("portal_enabled" if new else "portal_disabled", "student", student_id)
+    flash("Portal login enabled." if new else "Portal login disabled.", "success")
     return redirect(url_for("students.detail", student_id=student_id))

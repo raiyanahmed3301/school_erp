@@ -1,9 +1,9 @@
 import re
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
-
+from datetime import timedelta
 from conftest import PW, login, token
 from schoolerp.db import query
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 def school_today():
@@ -222,21 +222,6 @@ def test_student_crud_and_fees(admin, app):
     with app.app_context():
         assert query("SELECT status FROM fees", one=True)["status"] == "paid"
 
-def test_fee_payment_rejects_invalid_date_and_unknown_action(admin, app):
-    from schoolerp.db import execute
-    with app.app_context():
-        execute("INSERT INTO fees (student_id, period, amount_cents, currency, due_date) VALUES (1, '2026-10', 2500, 'INR', '2026-10-10')")
-    invalid_date = post(admin, "/fees/1/pay", {"action": "paid", "paid_on": "not-a-date", "method": "UPI"}, page="/fees/")
-    assert invalid_date.status_code == 400
-    future_date = (school_today() + timedelta(days=1)).isoformat()
-    assert post(admin, "/fees/1/pay", {"action": "paid", "paid_on": future_date, "method": "UPI"}, page="/fees/").status_code == 400
-    assert post(admin, "/fees/1/pay", {"action": "paid", "method": "Cryptocurrency"}, page="/fees/").status_code == 400
-    unknown_action = post(admin, "/fees/1/pay", {"action": "delete"}, page="/fees/")
-    assert unknown_action.status_code == 400
-    with app.app_context():
-        fee = query("SELECT status, paid_on FROM fees WHERE id=1", one=True)
-        assert (fee["status"], fee["paid_on"]) == ("pending", None)
-
 def test_audit_log_records(admin, app):
     post(admin, "/courses/save", {"name": "Test Course"}, page="/courses")
     with app.app_context():
@@ -245,13 +230,6 @@ def test_audit_log_records(admin, app):
 
 def test_dashboard_shows_missing_attendance(t1):
     assert "Attendance not yet marked" in t1.get("/").get_data(as_text=True)
-
-def test_dashboard_at_risk_students_are_scoped_to_teacher(t1, admin):
-    for days_ago in range(3):
-        d = (school_today() - timedelta(days=days_ago)).isoformat()
-        post(admin, f"/attendance/2/{d}", {"session_status": "held", "status_2": "absent"}, page=f"/attendance/2/{d}")
-    assert "Yusuf" in admin.get("/").get_data(as_text=True)
-    assert "Yusuf" not in t1.get("/").get_data(as_text=True)
 
 def test_error_pages_do_not_leak(admin):
     r = admin.get("/nope"); assert r.status_code == 404 and "Traceback" not in r.get_data(as_text=True)

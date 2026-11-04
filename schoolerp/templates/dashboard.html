@@ -6,6 +6,7 @@
   {% if is_admin() %}<div class="stat"><b>{{ n_trial }}</b><span>On free trial</span></div>
   <div class="stat {{ 'warn' if overdue }}"><b>{{ overdue }}</b><span>Overdue fees</span></div>{% endif %}
   <div class="stat"><b>{{ todays|length }}</b><span>Classes today</span></div>
+  <div class="stat {{ 'warn' if to_grade }}"><b>{{ to_grade }}</b><span><a href="{{ url_for('lms.courses') }}">Assignments to grade</a></span></div>
 </div>
 {% if missing %}
 <div class="card alert"><h2>⚠ Attendance not yet marked ({{ missing|length }})</h2>

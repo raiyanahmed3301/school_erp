@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% from "_macros.html" import field %}{% block title %}Assignment{% endblock %}
+{% block body %}<h1>{{ 'New assignment' if mode=='new' else 'Edit assignment' }}</h1><p class="muted">{{ c.title }}</p>
+<form method="post" class="card form narrow">{{ csrf_input() }}
+{{ field('Title','title',a.title,required=True,maxlength=150) }}
+<label class="field"><span>Instructions</span><textarea name="instructions" rows="6" maxlength="5000">{{ a.instructions or '' }}</textarea></label>
+{{ field('Due date (optional)','due_date',a.due_date,'date') }}{{ field('Maximum points','max_points',a.max_points,'number',True) }}
+<button class="btn primary">Save</button> <a class="btn ghost" href="{{ url_for('lms.course_manage', course_id=c.id) }}#assignments">Cancel</a></form>{% endblock %}

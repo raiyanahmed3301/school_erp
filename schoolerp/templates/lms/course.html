@@ -1,0 +1,50 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}{{ c.title }}{% endblock %}
+{% block body %}
+<div class="head"><h1>{{ c.title }} {{ badge(c.status) }}</h1><div><a class="btn" href="{{ url_for('lms.progress', course_id=c.id) }}">Progress report</a> <a class="btn" href="{{ url_for('lms.course_edit', course_id=c.id) }}">Settings / Publish</a></div></div>
+<p class="muted">{{ c.summary }} <span class="pill">{{ c.level|title }}</span> · Owner: {{ c.owner_name }}</p>
+<div class="card"><h2>Setup checklist</h2><ul class="steps">{% for label, ok in checklist %}<li class="{{ 'ok' if ok }}">{{ label }}</li>{% endfor %}</ul>
+{% if c.status=='draft' %}<p class="muted"><small>This course is a <b>draft</b>: students can't see it yet. When ready, open “Settings / Publish”.</small></p>{% endif %}</div>
+
+<div class="card" id="outline"><h2>1. Modules &amp; lessons</h2>
+<p class="muted"><small>A module is a chapter (e.g. “Makharij”). Put lessons inside modules.</small></p>
+<div class="outline">{% for m in mods %}<details open><summary>{{ m.title }}</summary><div class="lessons">
+<div class="tools"><form method="post" action="{{ url_for('lms.module_rename', module_id=m.id) }}" class="inline-form">{{ csrf_input() }}<input name="title" value="{{ m.title }}" maxlength="120"><button class="btn small">Rename</button></form>
+<form method="post" action="{{ url_for('lms.module_move', module_id=m.id) }}">{{ csrf_input() }}<input type="hidden" name="dir" value="up"><button class="btn small ghost" title="Move up">↑</button></form>
+<form method="post" action="{{ url_for('lms.module_move', module_id=m.id) }}">{{ csrf_input() }}<input type="hidden" name="dir" value="down"><button class="btn small ghost" title="Move down">↓</button></form>
+<form method="post" action="{{ url_for('lms.module_delete', module_id=m.id) }}" data-confirm="Delete this module and ALL its lessons?">{{ csrf_input() }}<button class="btn small ghost">Delete</button></form></div>
+{% for l in by_mod.get(m.id, []) %}<div class="lrow"><span class="grow">{{ l.title }} <span class="pill">{{ l.kind }}</span> {% if l.duration_min %}<small class="muted">{{ l.duration_min }} min</small>{% endif %}</span>
+<span class="tools"><a class="btn small" href="{{ url_for('lms.lesson_edit', lesson_id=l.id) }}">Edit</a>
+<form method="post" action="{{ url_for('lms.lesson_move', lesson_id=l.id) }}">{{ csrf_input() }}<input type="hidden" name="dir" value="up"><button class="btn small ghost">↑</button></form>
+<form method="post" action="{{ url_for('lms.lesson_move', lesson_id=l.id) }}">{{ csrf_input() }}<input type="hidden" name="dir" value="down"><button class="btn small ghost">↓</button></form>
+<form method="post" action="{{ url_for('lms.lesson_delete', lesson_id=l.id) }}" data-confirm="Delete this lesson?">{{ csrf_input() }}<button class="btn small ghost">✕</button></form></span></div>
+{% else %}<p class="muted">No lessons in this module yet.</p>{% endfor %}
+<p><a class="btn small primary" href="{{ url_for('lms.lesson_new', module_id=m.id) }}">+ Add lesson</a></p></div></details>
+{% else %}<p class="muted">No modules yet. Add your first module below.</p>{% endfor %}</div>
+<form method="post" action="{{ url_for('lms.module_add', course_id=c.id) }}" class="inline-form">{{ csrf_input() }}<input name="title" placeholder="New module name, e.g. Week 1 – Letters" maxlength="120" required><button class="btn primary">+ Add module</button></form></div>
+
+<div class="card" id="assignments"><div class="head"><h2>2. Assignments</h2><a class="btn small" href="{{ url_for('lms.assignment_new', course_id=c.id) }}">+ New assignment</a></div>
+<table>{% for a in assignments %}<tr><td><b>{{ a.title }}</b><br><small class="muted">{{ ('due ' ~ a.due_date) if a.due_date else 'no due date' }} · {{ a.max_points }} pts</small></td>
+<td>{{ a.n_sub }} submitted{% if a.n_pending %} · <span class="badge b-pending">{{ a.n_pending }} to grade</span>{% endif %}</td>
+<td class="tools"><a class="btn small" href="{{ url_for('lms.submissions', assignment_id=a.id) }}">Submissions</a><a class="btn small ghost" href="{{ url_for('lms.assignment_edit', assignment_id=a.id) }}">Edit</a>
+<form method="post" action="{{ url_for('lms.assignment_delete', assignment_id=a.id) }}" data-confirm="Delete this assignment and its submissions?">{{ csrf_input() }}<button class="btn small ghost">✕</button></form></td></tr>{% else %}<tr><td class="muted">No assignments (optional).</td></tr>{% endfor %}</table></div>
+
+<div class="card" id="quizzes"><h2>3. Quizzes</h2>
+<table>{% for z in quizzes %}<tr><td><b>{{ z.title }}</b> {{ badge('published' if z.is_published else 'draft') }}<br><small class="muted">{{ z.n_q }} questions · pass {{ z.pass_percent }}% · {{ z.n_attempts }} attempts</small></td>
+<td class="tools"><a class="btn small" href="{{ url_for('lms.quiz_manage', quiz_id=z.id) }}">Edit questions</a><a class="btn small ghost" href="{{ url_for('lms.quiz_results', quiz_id=z.id) }}">Results</a></td></tr>{% else %}<tr><td class="muted">No quizzes (optional). Students must pass every <i>published</i> quiz to earn the certificate.</td></tr>{% endfor %}</table>
+<form method="post" action="{{ url_for('lms.quiz_new', course_id=c.id) }}" class="inline-form">{{ csrf_input() }}<input name="title" placeholder="New quiz title" maxlength="150" required><button class="btn">+ Create quiz</button></form></div>
+
+<div class="card" id="students"><h2>4. Students ({{ students|length }})</h2>
+<form method="post" action="{{ url_for('lms.enroll', course_id=c.id) }}" class="inline-form">{{ csrf_input() }}
+<select name="student_id"><option value="">Enrol one student…</option>{% for s in pickable %}<option value="{{ s.id }}">{{ s.full_name }} ({{ s.student_code }}){{ '' if s.user_id else ' – no login yet' }}</option>{% endfor %}</select><button class="btn">Enrol</button></form>
+<form method="post" action="{{ url_for('lms.enroll', course_id=c.id) }}" class="inline-form">{{ csrf_input() }}
+<select name="class_id"><option value="">…or enrol a whole class</option>{% for k in classes %}<option value="{{ k.id }}">{{ k.name }}</option>{% endfor %}</select><button class="btn">Enrol class</button></form>
+<table>{% for s in students %}<tr><td>{{ s.full_name }} <small class="muted">{{ s.student_code }}</small>{% if not s.user_id %} <span class="badge b-pending">no portal login</span>{% endif %}</td><td>{% if s.completed_on %}<span class="badge b-present">completed</span>{% endif %}</td>
+<td><form method="post" action="{{ url_for('lms.unenroll', course_id=c.id) }}" class="inline" data-confirm="Remove {{ s.full_name }} from this course?">{{ csrf_input() }}<input type="hidden" name="student_id" value="{{ s.id }}"><button class="btn small ghost">Remove</button></form></td></tr>
+{% else %}<tr><td class="muted">Nobody enrolled yet.</td></tr>{% endfor %}</table>
+<p class="muted"><small>Students need a portal login to sign in (Admin → Students → open student → “Create portal login”).</small></p></div>
+
+<div class="card" id="announcements"><h2>5. Announcements</h2>
+<form method="post" action="{{ url_for('lms.announce', course_id=c.id) }}" class="form">{{ csrf_input() }}<input name="title" placeholder="Title" maxlength="150" required><br><br><textarea name="body" rows="3" placeholder="Message to all enrolled students" maxlength="3000"></textarea><br><button class="btn">Post announcement</button></form>
+{% for a in announcements %}<div class="row"><div><b>{{ a.title }}</b> <small class="muted">{{ a.created_at }} · {{ a.author }}</small><div>{{ a.body|paragraphs }}</div></div>
+<form method="post" action="{{ url_for('lms.announce_delete', ann_id=a.id) }}" data-confirm="Delete this announcement?">{{ csrf_input() }}<button class="btn small ghost">✕</button></form></div>{% endfor %}</div>
+{% endblock %}

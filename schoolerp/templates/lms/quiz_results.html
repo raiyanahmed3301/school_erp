@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block title %}Quiz results{% endblock %}
+{% block body %}<div class="head"><h1>{{ z.title }} — results</h1><a class="btn ghost" href="{{ url_for('lms.quiz_manage', quiz_id=z.id) }}">← Back</a></div>
+<div class="card"><table><tr><th>Student</th><th>Attempts</th><th>Best score</th><th>Result</th></tr>
+{% for r in rows %}<tr><td>{{ r.full_name }}</td><td>{{ r.attempts }}</td><td>{% if r.attempts %}{{ r.best }} / {{ r.total }}{% else %}—{% endif %}</td>
+<td>{% if not r.attempts %}<span class="badge">Not taken</span>{% elif r.passed %}<span class="badge b-present">Passed</span>{% else %}<span class="badge b-absent">Not yet passed</span>{% endif %}</td></tr>{% endfor %}</table></div>{% endblock %}

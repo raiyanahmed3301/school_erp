@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}Submissions{% endblock %}
+{% block body %}<div class="head"><h1>{{ a.title }}</h1><a class="btn ghost" href="{{ url_for('lms.course_manage', course_id=c.id) }}#assignments">← Back to course</a></div>
+<div class="card"><table><tr><th>Student</th><th>Submitted</th><th>Status</th><th>Score</th><th></th></tr>
+{% for r in rows %}<tr><td>{{ r.full_name }}</td><td>{{ r.submitted_at }}{% if a.due_date and r.submitted_at[:10] > a.due_date %} <span class="badge b-late">late</span>{% endif %}</td><td>{{ badge(r.status) }}</td>
+<td>{% if r.points is not none %}{{ r.points }} / {{ a.max_points }}{% else %}—{% endif %}</td><td><a class="btn small {{ 'primary' if r.status=='submitted' }}" href="{{ url_for('lms.grade', submission_id=r.id) }}">{{ 'Grade' if r.status=='submitted' else 'Review' }}</a></td></tr>
+{% else %}<tr><td class="muted">No submissions yet.</td></tr>{% endfor %}</table></div>
+{% if not_submitted %}<div class="card"><h2>Not submitted yet ({{ not_submitted|length }})</h2><p class="muted">{% for s in not_submitted %}{{ s.full_name }}{{ ', ' if not loop.last }}{% endfor %}</p></div>{% endif %}{% endblock %}

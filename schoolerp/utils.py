@@ -119,3 +119,28 @@ def weekdays_label(csv_days: str) -> str:
 
 def day_set(csv_days: str) -> set:
     return {int(d) for d in csv_days.split(",") if d.isdigit()}
+
+
+# ---------- LMS content helpers ----------
+from markupsafe import Markup, escape  # noqa: E402
+
+_YT = re.compile(r"^https://(?:www\.|m\.)?(?:youtube\.com/(?:watch\?(?:[^#]*&)?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})(?:[?&#/].*)?$")
+_VIMEO = re.compile(r"^https://(?:www\.)?vimeo\.com/(\d{6,12})(?:[/?#].*)?$")
+
+
+def embed_url(url):
+    """Return a safe embed URL for YouTube/Vimeo links (built from the video ID only), else None."""
+    url = (url or "").strip()
+    m = _YT.match(url)
+    if m:
+        return f"https://www.youtube-nocookie.com/embed/{m.group(1)}"
+    m = _VIMEO.match(url)
+    if m:
+        return f"https://player.vimeo.com/video/{m.group(1)}"
+    return None
+
+
+def paragraphs(text):
+    """Plain text -> safe HTML paragraphs (everything is escaped; no user HTML ever). dir=auto handles Arabic/Urdu."""
+    parts = [p for p in re.split(r"\n\s*\n", (text or "").replace("\r\n", "\n").replace("\r", "\n")) if p.strip()]
+    return Markup("".join('<p dir="auto">%s</p>' % escape(p.strip()).replace("\n", Markup("<br>")) for p in parts))

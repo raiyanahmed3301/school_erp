@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block title %}Certificate{% endblock %}
+{% block body %}<div class="cert"><div>☪ {{ school_name }}</div><h1>Certificate of Completion</h1><p>This certifies that</p><div class="name">{{ cert.full_name }}</div>
+<p>has successfully completed the course</p><h2>{{ c.title }}</h2><p>Issued on {{ cert.issued_on }}</p>
+<small>Certificate ID: <b>{{ cert.code }}</b><br>Verify at {{ verify_url }}</small></div>
+<p class="center noprint"><button class="btn primary big" data-print>Print / Save as PDF</button> <a class="btn ghost" href="{{ url_for('learn.course', course_id=c.id) }}">← Back</a></p>{% endblock %}

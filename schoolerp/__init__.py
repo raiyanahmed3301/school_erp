@@ -8,20 +8,15 @@ from markupsafe import Markup
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from . import db, security, utils
-from .config import INSTANCE_DIR, IS_VERCEL, load_secret_key
+from .config import INSTANCE_DIR, load_secret_key
 
 
 def create_app(test_config=None):
-    database_url = os.environ.get("DATABASE_URL")
-    if IS_VERCEL and not database_url:
-        raise RuntimeError("Set DATABASE_URL to a persistent PostgreSQL database in Vercel Project Settings.")
-    if IS_VERCEL and not database_url.startswith(("postgres://", "postgresql://")):
-        raise RuntimeError("DATABASE_URL must be a PostgreSQL connection string on Vercel.")
     app = Flask(__name__, instance_path=str(INSTANCE_DIR))
     dev = os.environ.get("SCHOOL_ERP_ENV") == "development"
     app.config.update(
         SECRET_KEY=load_secret_key(),
-        DATABASE=database_url or str(INSTANCE_DIR / "school.db"),
+        DATABASE=str(INSTANCE_DIR / "school.db"),
         SCHOOL_NAME="Quran Live Class",
         SCHOOL_TZ=os.environ.get("SCHOOL_TZ", "Asia/Kolkata"),
         STUDENT_PREFIX="QLC",
@@ -36,7 +31,7 @@ def create_app(test_config=None):
     )
     if test_config:
         app.config.update(test_config)
-    INSTANCE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    INSTANCE_DIR.mkdir(mode=0o700, exist_ok=True)
     if os.environ.get("BEHIND_PROXY") == "1":  # one trusted reverse proxy (nginx/caddy)
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
@@ -44,10 +39,13 @@ def create_app(test_config=None):
     app.before_request(security.load_user)
     app.before_request(security.csrf_protect)
     app.before_request(security.enforce_password_change)
+    app.before_request(security.restrict_students)
     app.after_request(security.add_security_headers)
 
     app.jinja_env.filters["money"] = utils.money
     app.jinja_env.filters["weekdays"] = utils.weekdays_label
+    app.jinja_env.filters["embed_url"] = utils.embed_url
+    app.jinja_env.filters["paragraphs"] = utils.paragraphs
     app.jinja_env.filters["pairs"] = lambda seq: [(x, x) for x in seq]
     app.jinja_env.filters["titled"] = lambda seq: [(x, x.title()) for x in seq]
     app.jinja_env.filters["rowopts"] = lambda rows, k, label: [(r[k], r[label]) for r in rows]
@@ -57,9 +55,10 @@ def create_app(test_config=None):
         return dict(csrf_input=security.csrf_input, school_name=app.config["SCHOOL_NAME"],
                     is_admin=security.is_admin, WEEKDAYS=utils.WEEKDAY_NAMES)
 
-    from .views import attendance, audit_view, auth, dashboard, fees, reports, staff, students, academics
-    for m in (auth, dashboard, students, staff, academics, attendance, reports, fees, audit_view):
+    from .views import attendance, audit_view, auth, dashboard, fees, learn, lms, reports, staff, students, academics
+    for m in (auth, dashboard, students, staff, academics, attendance, reports, fees, audit_view, lms, learn):
         app.register_blueprint(m.bp)
+    app.register_blueprint(learn.public)
 
     for code, msg in {400: "Bad request (the form may have expired -- please go back and try again).",
                       403: "You don't have permission to do that.", 404: "Page not found.",
@@ -78,6 +77,12 @@ def create_app(test_config=None):
         db.init_db()
         os.chmod(app.config["DATABASE"], 0o600)
         click.echo("Database created.")
+
+    @app.cli.command("migrate")
+    def migrate_cmd():
+        """Upgrade an existing database to the latest version (makes a backup copy first)."""
+        applied = db.migrate(backup=True)
+        click.echo("Applied: " + ", ".join(applied) if applied else "Already up to date.")
 
     @app.cli.command("create-admin")
     @click.option("--username", prompt=True)

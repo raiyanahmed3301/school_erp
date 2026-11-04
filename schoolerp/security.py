@@ -153,6 +153,47 @@ def admin_required(view):
     return wrapped
 
 
+def staff_required(view):
+    """Admin or teacher only."""
+    @functools.wraps(view)
+    def wrapped(*a, **kw):
+        if g.user is None:
+            return redirect(url_for("auth.login", next=request.full_path.rstrip("?")))
+        if g.user["role"] not in ("admin", "teacher"):
+            abort(403)
+        return view(*a, **kw)
+    return wrapped
+
+
+def student_required(view):
+    """Students only; also resolves g.student_id (the students.id linked to this login)."""
+    @functools.wraps(view)
+    def wrapped(*a, **kw):
+        if g.user is None:
+            return redirect(url_for("auth.login", next=request.full_path.rstrip("?")))
+        if g.user["role"] != "student":
+            abort(403)
+        row = query("SELECT id FROM students WHERE user_id=?", (g.user["id"],), one=True)
+        if row is None:
+            abort(403)
+        g.student_id = row["id"]
+        return view(*a, **kw)
+    return wrapped
+
+
+STUDENT_BLUEPRINTS = {"learn", "auth", "public", "static"}
+
+
+def restrict_students():
+    """Deny-by-default: a student login can ONLY reach the learner portal, never staff pages."""
+    if g.user is not None and g.user["role"] == "student":
+        bp = (request.endpoint or "").split(".")[0]
+        if request.endpoint == "dashboard.index":
+            return redirect(url_for("learn.home"))
+        if bp not in STUDENT_BLUEPRINTS:
+            abort(403)
+
+
 def is_admin() -> bool:
     return g.user is not None and g.user["role"] == "admin"
 
@@ -184,7 +225,8 @@ def get_student_or_404(student_id):
 def add_security_headers(resp):
     resp.headers["Content-Security-Policy"] = (
         "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
-        "form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'")
+        "form-action 'self'; frame-ancestors 'none'; "
+        "frame-src https://www.youtube-nocookie.com https://player.vimeo.com; base-uri 'self'; object-src 'none'")
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["X-Frame-Options"] = "DENY"
     resp.headers["Referrer-Policy"] = "same-origin"

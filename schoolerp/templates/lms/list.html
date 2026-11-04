@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}Online courses{% endblock %}
+{% block body %}
+<div class="head"><h1>Online Courses</h1><a class="btn primary" href="{{ url_for('lms.course_new') }}">+ New course</a></div>
+<div class="help"><b>How it works:</b> 1) Create a course → 2) add modules and lessons → 3) enrol students → 4) publish. Students sign in to their own portal to learn, take quizzes and earn certificates.</div>
+{% if courses %}<div class="cards">{% for c in courses %}<div class="card"><h3><a href="{{ url_for('lms.course_manage', course_id=c.id) }}">{{ c.title }}</a></h3>
+<div>{{ badge(c.status) }} <span class="pill">{{ c.level|title }}</span></div><div class="muted">{{ c.n_lessons }} lessons · {{ c.n_students }} students{% if is_admin() %} · {{ c.owner_name }}{% endif %}</div>
+{% if c.to_grade %}<div><span class="badge b-pending">{{ c.to_grade }} to grade</span></div>{% endif %}
+<a class="btn small" href="{{ url_for('lms.course_manage', course_id=c.id) }}">Manage</a></div>{% endfor %}</div>
+{% else %}<div class="card center"><h2>No courses yet</h2><p class="muted">Create your first online course to get started.</p><a class="btn primary" href="{{ url_for('lms.course_new') }}">Create a course</a></div>{% endif %}
+{% endblock %}

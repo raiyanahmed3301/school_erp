@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}{{ a.title }}{% endblock %}
+{% block body %}<p class="muted"><a href="{{ url_for('learn.course', course_id=c.id) }}">{{ c.title }}</a></p><h1>{{ a.title }}</h1>
+<p class="muted">{{ ('Due ' ~ a.due_date) if a.due_date else 'No deadline' }} · {{ a.max_points }} points{% if late and not sub %} · <b>past due</b>{% endif %}</p>
+<div class="card prose">{{ a.instructions|paragraphs }}</div>
+{% if sub and sub.status=='graded' %}<div class="card"><h2>Your result: {{ sub.points }} / {{ a.max_points }}</h2>{% if sub.feedback %}<h3>Teacher's feedback</h3><div class="prose">{{ sub.feedback|paragraphs }}</div>{% endif %}<h3>Your answer</h3><div class="prose">{{ sub.body|paragraphs }}</div></div>
+{% else %}<form method="post" class="card form">{{ csrf_input() }}<h2>{{ 'Edit your answer' if sub else 'Your answer' }}</h2>{% if sub %}<p class="muted">Submitted {{ sub.submitted_at }}. You can edit until your teacher grades it.</p>{% endif %}
+<textarea name="body" rows="10" maxlength="10000" required>{{ draft }}</textarea><br><br><button class="btn primary">{{ 'Update submission' if sub else 'Submit' }}</button></form>{% endif %}{% endblock %}

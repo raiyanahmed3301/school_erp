@@ -1,4 +1,4 @@
-# Quran Live Class – School ERP (v0.1)
+# Quran Live Class – School ERP + LMS (v0.2)
 
 A small, secure, self-hosted school management system for an online Islamic school.
 Inspired by Frappe Education (students, attendance, scheduling, fees, reports) but trimmed to what
@@ -16,6 +16,22 @@ a live-class academy needs. **Attendance is the core feature.**
 | **Staff** | Admin and Teacher roles; auto-generated one-time temporary passwords; deactivate instantly |
 | **Activity log** | Who did what and when |
 
+## NEW in v0.2 – Learning Management System (LMS) + Student Portal
+| Who | What they can do |
+|---|---|
+| **Teacher / Admin** | **Online Courses** → build a course (modules → lessons: reading text, YouTube/Vimeo video, external link); auto-graded **multiple-choice quizzes**; **assignments** with grading + feedback; **announcements**; enrol one student or a whole class; **progress report** (+CSV); a setup checklist guides beginners step by step |
+| **Student** | Own login → **My Learning**: continue where you left off, progress bars, quizzes (limited attempts), assignments, to-do list, announcements, **printable certificate** (public verification link `/verify/<code>`), **My Attendance** and lesson-progress log |
+| **Admin** | Student page → **Create portal login** (temporary password shown once, forced change at first sign-in); disable/reset any time |
+
+A certificate is issued automatically when a student finishes every lesson **and** passes every published quiz.
+
+**Beginner's first 10 minutes:** sign in as admin → *Staff & Teachers* add a teacher → *Students* add a student → open the student → *Create portal login* → *Online Courses → New course* → add a module + lesson → *Settings / Publish* → *Enrol* the student → sign in as the student in a private window and click **Start learning**.
+
+### Upgrading an existing v0.1 database
+```bash
+flask --app schoolerp migrate     # makes a backup copy (school.db.bak-DATE) first, then upgrades. Safe to re-run.
+```
+
 ## Quick start (local)
 ```bash
 python3 -m venv venv && source venv/bin/activate       # Windows: venv\Scripts\activate
@@ -25,7 +41,7 @@ flask --app schoolerp init-db
 flask --app schoolerp create-admin                     # asks for username + password (no default login exists)
 flask --app schoolerp seed-demo                        # optional sample data (dev only)
 flask --app schoolerp run                              # open http://127.0.0.1:5000
-python -m pytest tests                                 # 30 tests incl. security tests
+python -m pytest tests                                 # 52 tests incl. security + LMS tests
 ```
 Set your school's time zone with `SCHOOL_TZ` (default `Asia/Kolkata`). Class times are in school time.
 
@@ -37,16 +53,6 @@ Set your school's time zone with `SCHOOL_TZ` (default `Asia/Kolkata`). Class tim
    `erp.quranliveclass.com { reverse_proxy 127.0.0.1:8000 }`
 5. Back up `instance/school.db` daily (copy it off the server). Keep `instance/` readable only by the app user.
 6. Use a separate sub-domain (e.g. `erp.`), not your public WordPress site.
-
-## Deploying to Vercel
-The Vercel entrypoint is `app.py`. Vercel Functions have a read-only application filesystem, so this deployment uses `/tmp` only for temporary instance files and requires a persistent PostgreSQL database (for example, a Neon database connected through Vercel Marketplace).
-
-1. Set the Vercel project's **Root Directory** to this repository directory (the directory containing `app.py` and `requirements.txt`).
-2. Add a PostgreSQL database and set `DATABASE_URL` to its pooled connection string in the Vercel project's Environment Variables.
-3. Set `SECRET_KEY` to a long random value in the same settings. Do not use the generated local development key.
-4. Redeploy. The app creates its PostgreSQL schema and starter course rows on the first database request.
-
-SQLite remains the default for local installs. It is not used on Vercel because function-local files are temporary and cannot safely hold school records.
 
 ## Security design (what protects you)
 - **Passwords**: scrypt hashing with salts; min 10 chars + policy; no default accounts; temp passwords shown once and must be changed.
@@ -62,8 +68,19 @@ SQLite remains the default for local installs. It is not used on Vercel because 
 
 Known limits (by design for v0.1): no 2-factor login yet; SQLite = single server (fine for hundreds of students).
 
+## LMS security notes
+- Students are **deny-by-default**: a student login can reach only `/learn` pages (enforced centrally), never staff screens.
+- Students see only **published** courses they're **enrolled** in; every lesson/quiz/attempt/assignment is ownership-checked (no ID-guessing).
+- Quiz answers are never sent to the browser before submission; options are validated per question; attempt limits are atomic.
+- Lesson text is plain text, always escaped (no HTML injection). Videos: only YouTube/Vimeo, embedded via a CSP `frame-src` allow-list.
+- Certificates use unguessable 64-bit codes; the public verify page shows only name, course, date.
+- Database upgrades run in a transaction, with automatic backup and a foreign-key integrity check.
+
+## Scaling notes
+SQLite (WAL) comfortably serves a few hundred students/teachers on one small server. When you outgrow it: move to PostgreSQL, add Redis for rate-limits/sessions, and run several gunicorn workers behind Caddy/nginx. See `MASTER_PROMPT.md` for the full production/SaaS plan.
+
 ## Roadmap (suggested next steps)
-1. Student/parent portal (read-only attendance, progress, invoices)
+1. Parent accounts (one login for several children) + invoices in the portal; file uploads (PDF/audio recitation) with virus scanning
 2. WhatsApp/email reminders for absentees and fee dues
 3. Admissions / free-trial pipeline (enquiry → trial → active)
 4. Two-factor login for admins

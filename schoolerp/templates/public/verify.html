@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}Verify certificate{% endblock %}
+{% block body %}<div class="card narrow center"><h1>Certificate verification</h1>
+{% if cert %}<p><span class="badge b-present">✓ Valid certificate</span></p><h2>{{ cert.full_name }}</h2><p>completed <b>{{ cert.title }}</b><br>on {{ cert.issued_on }}</p><p class="muted">Issued by {{ school_name }} · ID {{ cert.code }}</p>
+{% else %}<p><span class="badge b-absent">Not found</span></p><p class="muted">No certificate matches this code.</p>{% endif %}</div>{% endblock %}

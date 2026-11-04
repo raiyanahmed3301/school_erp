@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% from "_macros.html" import field, select %}{% block title %}Lesson{% endblock %}
+{% block body %}<h1>{{ 'Add lesson' if mode=='new' else 'Edit lesson' }}</h1><p class="muted">{{ c.title }} › {{ m.title }}</p>
+<form method="post" class="card form">{{ csrf_input() }}
+{{ field('Lesson title','title',l.title,required=True,maxlength=150) }}
+<div class="cols">{{ select('Type','kind',KINDS.items()|list,l.kind) }}{{ field('Minutes (approx.)','duration_min',l.duration_min,'number') }}</div>
+{{ field('Video / link URL','url',l.url,'url',maxlength=300,hint='For video: paste a YouTube or Vimeo link. For external link: any https:// page. Leave empty for reading lessons.') }}
+<label class="field"><span>Lesson text / notes</span><textarea name="body" rows="12" maxlength="20000">{{ l.body or '' }}</textarea><small>Plain text. Leave a blank line between paragraphs. Arabic/Urdu text works.</small></label>
+<button class="btn primary">Save lesson</button> <a class="btn ghost" href="{{ url_for('lms.course_manage', course_id=c.id) }}#outline">Cancel</a></form>{% endblock %}

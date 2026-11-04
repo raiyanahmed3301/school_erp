@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block title %}{{ l.title }}{% endblock %}
+{% block body %}<p class="muted"><a href="{{ url_for('learn.course', course_id=c.id) }}">{{ c.title }}</a> › {{ l.module_title }} · lesson {{ pos }} of {{ total }}</p><h1>{{ l.title }}</h1>
+{% if l.kind=='video' %}{% set e = l.url|embed_url %}{% if e %}<div class="video"><iframe src="{{ e }}" title="{{ l.title }}" allow="fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>{% endif %}
+{% elif l.kind=='link' and l.url %}<p><a class="btn primary" href="{{ l.url }}" target="_blank" rel="noopener noreferrer">Open the resource ↗</a></p>{% endif %}
+<div class="prose">{{ l.body|paragraphs }}</div>
+<div class="lessonnav noprint">{% if prev_id %}<a class="btn" href="{{ url_for('learn.lesson', lesson_id=prev_id) }}">← Previous</a>{% else %}<span></span>{% endif %}
+<form method="post" action="{{ url_for('learn.lesson_complete', lesson_id=l.id) }}">{{ csrf_input() }}<button class="btn primary big">{{ '✓ Completed — next →' if is_done else 'Mark as complete & continue →' }}</button></form>
+{% if next_id %}<a class="btn ghost" href="{{ url_for('learn.lesson', lesson_id=next_id) }}">Skip →</a>{% else %}<span></span>{% endif %}</div>{% endblock %}

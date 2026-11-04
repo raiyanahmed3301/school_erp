@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block title %}Progress{% endblock %}
+{% block body %}<div class="head"><h1>{{ c.title }} — progress</h1><div><a class="btn" href="?format=csv">Download CSV</a> <a class="btn ghost" href="{{ url_for('lms.course_manage', course_id=c.id) }}">← Back</a></div></div>
+<div class="card"><table><tr><th>Student</th><th>Lessons</th><th>Quizzes passed</th><th>Assignments</th><th>Completed</th></tr>
+{% for r in rows %}<tr><td>{{ r.full_name }}</td><td><progress max="{{ n_lessons or 1 }}" value="{{ r.done }}"></progress> <small>{{ r.done }}/{{ n_lessons }}</small></td><td>{{ r.quizzes_passed }}/{{ n_quizzes }}</td><td>{{ r.submitted }}/{{ n_assign }}</td>
+<td>{% if r.completed_on %}<span class="badge b-present">{{ r.completed_on }}</span>{% else %}—{% endif %}</td></tr>{% else %}<tr><td class="muted">No students enrolled.</td></tr>{% endfor %}</table></div>{% endblock %}

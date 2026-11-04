@@ -18,3 +18,6 @@ document.addEventListener("DOMContentLoaded", function () {
     sel.addEventListener("change", toggle); toggle();
   }
 });
+document.addEventListener("click", function (e) {
+  if (e.target.closest("[data-print]")) window.print();   // CSP-safe replacement for onclick
+});

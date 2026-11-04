@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% from "_macros.html" import field, select %}{% block title %}Course{% endblock %}
+{% block body %}<h1>{{ 'New course' if mode=='new' else 'Course settings' }}</h1>
+<form method="post" class="card form narrow">{{ csrf_input() }}
+{{ field('Course title','title',c.title,required=True,maxlength=120,hint='e.g. Tajweed for Beginners') }}
+<label class="field"><span>Short description</span><textarea name="summary" rows="3" maxlength="600">{{ c.summary or '' }}</textarea></label>
+{{ select('Level','level',LEVELS|titled,c.level) }}
+{{ select('Subject (optional)','catalog_course_id',[('','—')]+(catalog|rowopts('id','name')),c.catalog_course_id) }}
+{% if is_admin() %}{{ select('Course owner','owner_id',owners|rowopts('id','full_name'),c.owner_id,True) }}{% endif %}
+{% if mode=='edit' %}{{ select('Status','status',STATUSES|titled,c.status) }}<p class="muted"><small>Draft = hidden from students. Published = enrolled students can see it. Archived = closed but kept for records.</small></p>{% endif %}
+<button class="btn primary">Save</button> <a class="btn ghost" href="{{ url_for('lms.courses') if mode=='new' else url_for('lms.course_manage', course_id=c.id) }}">Cancel</a></form>{% endblock %}

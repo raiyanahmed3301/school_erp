@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block title %}My learning{% endblock %}
+{% block body %}<h1>Assalamu alaikum, {{ g.user.full_name.split(' ')[0] }} 👋</h1>
+{% if cards %}<h2>My courses</h2><div class="cards">{% for c in cards %}<div class="card"><h3><a href="{{ url_for('learn.course', course_id=c.id) }}">{{ c.title }}</a></h3>
+<div class="muted">{{ c.summary }}</div><progress max="100" value="{{ c.pct }}"></progress><small>{{ c.pct }}% complete · {{ c.done }}/{{ c.total }} lessons</small>
+{% if c.complete %}<a class="btn small primary" href="{{ url_for('learn.certificate', course_id=c.id) }}">🎓 View certificate</a>
+{% elif c.next %}<a class="btn primary" href="{{ url_for('learn.lesson', lesson_id=c.next) }}">{{ 'Start' if c.done==0 else 'Continue' }} learning →</a>
+{% else %}<a class="btn" href="{{ url_for('learn.course', course_id=c.id) }}">Open course</a>{% endif %}</div>{% endfor %}</div>
+{% else %}<div class="card center"><h2>No courses yet</h2><p class="muted">Your teacher will enrol you in a course. Check back soon, in shaa Allah.</p></div>{% endif %}
+<div class="grid2"><div class="card"><h2>To do</h2>{% for t in todo %}<div class="row"><div><a href="{{ url_for('learn.assignment', assignment_id=t.id) }}">{{ t.title }}</a><br><small class="muted">{{ t.course_title }}</small></div>
+<span class="badge {{ 'b-absent' if t.due_date and t.due_date < today else 'b-pending' }}">{{ ('due ' ~ t.due_date) if t.due_date else 'no deadline' }}</span></div>{% else %}<p class="muted">Nothing due. Well done!</p>{% endfor %}</div>
+<div class="card"><h2>Announcements</h2>{% for n in news %}<div class="row"><div><b>{{ n.title }}</b><br><small class="muted">{{ n.course_title }} · {{ n.created_at[:10] }}</small></div></div>{% else %}<p class="muted">No announcements.</p>{% endfor %}</div></div>
+{% if certs %}<div class="card"><h2>My certificates</h2>{% for c in certs %}<div class="row"><span>🎓 {{ c.title }} <small class="muted">{{ c.issued_on }}</small></span><a class="btn small" href="{{ url_for('learn.certificate', course_id=c.course_id) }}">Open</a></div>{% endfor %}</div>{% endif %}{% endblock %}

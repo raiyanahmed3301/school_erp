@@ -29,7 +29,7 @@ def _active_admins():
 @bp.route("/")
 @admin_required
 def list_():
-    return render_template("staff/list.html", users=query("SELECT * FROM users ORDER BY is_active DESC, role, full_name"))
+    return render_template("staff/list.html", users=query("SELECT * FROM users WHERE role IN ('admin','teacher') ORDER BY is_active DESC, role, full_name"))
 
 
 @bp.route("/new", methods=["GET", "POST"])
@@ -57,7 +57,7 @@ def new():
 @bp.route("/<int:user_id>/edit", methods=["GET", "POST"])
 @admin_required
 def edit(user_id):
-    u = query("SELECT * FROM users WHERE id=?", (user_id,), one=True) or abort(404)
+    u = query("SELECT * FROM users WHERE id=? AND role IN ('admin','teacher')", (user_id,), one=True) or abort(404)
     if request.method == "POST":
         d, errs = _validate(request.form, False)
         active = 1 if request.form.get("is_active") == "1" else 0
@@ -81,7 +81,7 @@ def edit(user_id):
 @bp.route("/<int:user_id>/reset", methods=["POST"])
 @admin_required
 def reset(user_id):
-    u = query("SELECT * FROM users WHERE id=?", (user_id,), one=True) or abort(404)
+    u = query("SELECT * FROM users WHERE id=? AND role IN ('admin','teacher')", (user_id,), one=True) or abort(404)
     pw = temp_password()
     execute("UPDATE users SET password_hash=?, must_change_password=1, token_version=token_version+1 WHERE id=?",
             (hash_password(pw), user_id))
